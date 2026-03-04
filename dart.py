@@ -156,12 +156,9 @@ async def get_corp_code_by_name(corp_name: str) -> Tuple[str, str]:
                                     matches = []
                                     for company in root.findall('.//list'):
                                         name = company.find('corp_name').text
-                                        stock_code = company.find('stock_code').text
+                                        stock_code_elem = company.find('stock_code')
+                                        stock_code = stock_code_elem.text if stock_code_elem is not None else ""
                                         
-                                        # stock_code가 비어있거나 공백만 있는 경우 건너뛰기
-                                        if not stock_code or stock_code.strip() == "":
-                                            continue
-                                            
                                         if name and corp_name in name:
                                             # 일치도 점수 계산 (낮을수록 더 정확히 일치)
                                             score = 0
@@ -169,6 +166,9 @@ async def get_corp_code_by_name(corp_name: str) -> Tuple[str, str]:
                                                 score += abs(len(name) - len(corp_name))
                                                 if not name.startswith(corp_name):
                                                     score += 10
+                                            # 비상장사는 상장사보다 우선순위 낮게 설정
+                                            if not stock_code or stock_code.strip() == "":
+                                                score += 5
                                             
                                             code = company.find('corp_code').text
                                             matches.append((name, code, score))
